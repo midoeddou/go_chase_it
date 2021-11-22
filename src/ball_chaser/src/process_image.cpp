@@ -9,8 +9,6 @@ ros::ServiceClient client;
 void drive_robot(float lin_x, float ang_z)
 {
     // TODO: Request a service and pass the velocities to it to drive the robot
- 
-  ROS_INFO_STREAM("Driving the robot toward the ball");
 
    // Request velocities [lin_x,ang_z]
     ball_chaser::DriveToTarget srv;
@@ -29,43 +27,49 @@ void process_image_callback(const sensor_msgs::Image img)
 
     int white_pixel = 255;
     bool white_ball_in_camera = false;
-    ROS_INFO_STREAM(white_ball_in_camera);
-  
+    int pixel_position = 0;
 
     // TODO: Loop through each pixel in the image and check if there's a bright white one
 
-for (int i = 0 ; i < img.height*img.step; i++)
-  {
-      if (img.data[i] - white_pixel == 0)
-      {
+for (int i = 0 ; i < img.height*img.step; i++){
+      if (img.data[i] - white_pixel == 0) { 
+         pixel_position = i % img.step;
+         ROS_INFO_STREAM(pixel_position);
+         break; 
+       }
+    }     
 
 // Depending on the white ball position, call the drive_bot function and pass velocities to it
 
-          {
-           if (i < trunc(img.step/3)) 
-           {drive_robot(0.5, 0.5);
-           white_ball_in_camera = true;}
-          }
-
-          { 
-           if (trunc(img.step/3) + 1 < i < trunc(img.step/3)*2) 
-           {drive_robot(0.5, 0.5);
-            white_ball_in_camera = true;}
-           }
-        
-          { 
-           if (trunc(img.step/3)*2 + 1 < i) 
-           {drive_robot(0.5, -0.5);
-            white_ball_in_camera = true;}
-          }
- 
-       }
-      
+          
+if (pixel_position > 0 && pixel_position <= img.step/3){ 
+   drive_robot(0.0, 0.5);
+   ROS_INFO_STREAM(pixel_position);
+   ROS_INFO_STREAM("driving the robot LEFT");
    }
+          
+else if (img.step/3 < pixel_position && pixel_position <= img.step*2/3){ 
+    drive_robot(0.5, 0);
+    ROS_INFO_STREAM(pixel_position);
+    ROS_INFO_STREAM("driving the robot straight toward ball");
+    }       
+        
+           
+else if (img.step*2/3 + 1 < pixel_position){ 
+    drive_robot(0.0, -0.5);
+    ROS_INFO_STREAM(pixel_position);
+    ROS_INFO_STREAM("driving the robot RIGHT");
+    }
+          
+ 
+else
+    {
+    drive_robot(0, 0);  
+    ROS_INFO_STREAM("no white ball detected");  
+    }
   
-  if (white_ball_in_camera == false)
-  {drive_robot(0, 0);}   
-  ROS_INFO_STREAM(white_ball_in_camera);   
+  
+     
 }
 
 int main(int argc, char** argv)
